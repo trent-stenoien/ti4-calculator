@@ -1,44 +1,129 @@
 interface Faction {
     name: string,
     key: string
-    /*
-    More to be added later on?
-        More likely handle differences in respective components.
-    */
 }
 
 const factions: Faction[] = [
     {
-The Argent Flight
-The Barony of Letnev
-The Emirates of Hacan
-The Empyrean
-The Federation of Sol
-Last Bastion
-The L1Z1X Mindnet
-The Naaz- Rokha Alliance
-The Nomad
-The Ral Nel Consortium
-The Universities of Jol - Nar
-The Xxcha Kingdom
-The Yin Brotherhood
-The Yssaril Tribes
-The Clan of Saar
-The Council Keleres
-The Deepwrought Scholarate
-The Ghosts of Creuss
-The Naalu Collective
-Sardakk N'orr
-The Titans of Ul
-The Winnu
-The Arborec
-The Crimson Rebellion
-The Embers of Muaat
-The Firmament / The Obsidian
-The Mahact Gene - Sorcerers
-The Mentak Coalition
-The Nekro Virus
-The Vuil'Raith Cabal
-    }
+        name: "The Arborec",
+        key: "arborec"
+    },
+    {
+        name: "The Argent Flight",
+        key: "argent"
+    },
+    {
+        name: "The Barony of Letnev",
+        key: "barony"
+    },
+    {
+        name: "The Clan of Saar",
+        key: "saar"
+    },
+    {
+        name: "The Council Keleres",
+        key: "keleres"
+    },
+    {
+        name: "The Crimson Rebellion",
+        key: "rebellion"
+    },
+    {
+        name: "The Deepwrought Scholarate",
+        key: "deepwrought"
+    },
+    {
+        name: "The Emirates of Hacan",
+        key: "hacan"
+    },
+    {
+        name: "The Embers of Muaat",
+        key: "muaat"
+    },
+    {
+        name: "The Empyrean",
+        key: "empyrean"
+    },
+    {
+        name: "The Federation of Sol",
+        key: "sol"
+    },
+    {
+        name: "The Firmament / The Obsidian",
+        key: "firmobs"
+    },
+    {
+        name: "The Ghosts of Creuss",
+        key: "ghosts"
+    },
+    {
+        name: "Last Bastion",
+        key: "bastion"
+    },
+    {
+        name: "The L1Z1X Mindnet",
+        key: "L1Z1X"
+    },
+    {
+        name: "The Mahact Gene-Sorcerers",
+        key: "mahact"
+    },
+    {
+        name: "The Mentak Coalition",
+        key: "mentak"
+    },
+    {
+        name: "The Naalu Collective",
+        key: "naalu"
+    },
+    {
+        name: "The Naaz-Rokha Alliance",
+        key: "nra"
+    },
+    {
+        name: "The Nekro Virus",
+        key: "nekro"
+    },
+    {
+        name: "The Nomad",
+        key: "nomad"
+    },
+    {
+        name: "The Ral Nel Consortium",
+        key: "rnc"
+    },
+    {
+        name: "Sardakk N'orr",
+        key: "sardakk"
+    },
+    {
+        name: "The Titans of Ul",
+        key: "titans"
+    },
+    {
+        name: "The Universities of Jol-Nar",
+        key: "jolnar"
+    },
+    {
+        name: "The Vuil'Raith Cabal",
+        key: "cabal"
+    },
+    {
+        name: "The Winnu",
+        key: "winnu"
+    },
+    {
+        name: "The Xxcha Kingdom",
+        key: "xxcha"
+    },
+    {
+        name: "The Yin Brotherhood",
+        key: "yin"
+    },
+    {
+        name: "The Yssaril Tribes",
+        key: "yssaril"
+    },
+];
 
-]
+export default factions;
