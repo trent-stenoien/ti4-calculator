@@ -1,4 +1,4 @@
-import type { UnitID, UnitDefinition } from './Units';
+import type { UnitDefinition } from './Units';
 
 export type FactionID =
     | "arborec" | "argent" | "barony" | "saar" | "keleres"
@@ -15,7 +15,6 @@ interface FactionDefinition {
 };
 
 export const factions: FactionDefinition[] = [
-
     {
         factionID: "arborec",
         name: "The Arborec",

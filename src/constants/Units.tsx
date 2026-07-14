@@ -41,6 +41,14 @@ export interface UnitSummary {
 	specialText?: string,
 };
 
+type UnitName = {
+	unitID: UnitID,
+	name: string
+};
+
+export const getUnitNames = (): UnitName[] =>
+	units.map(u => ({ unitID: u.unitID, name: u.name }) );
+
 const units: UnitDefinition[] = [
 
 	// NOTE: Flagships and Mechs live on ./constants/Factions
@@ -190,13 +198,13 @@ function updateUnit(unit: UnitDefinition, factionUnit: Partial<UnitDefinition>) 
 	return { ...unit, ...factionUnit };
 };
 
-type getEffectiveStatsProps = {
-	factionID: FactionID,
+type getUnitStatsProps = {
 	unitID: UnitID,
-	upgraded: boolean
+	factionID: FactionID,
+	upgraded: boolean,
 };
 
-const getEffectiveStats = ({ factionID, unitID, upgraded }: getEffectiveStatsProps): UnitSummary => {
+const getUnitStats = ({ unitID, factionID, upgraded }: getUnitStatsProps): UnitSummary => {
 
 	const baseUnit: UnitDefinition = units.find(u => u.unitID == unitID);
 
@@ -210,8 +218,6 @@ const getEffectiveStats = ({ factionID, unitID, upgraded }: getEffectiveStatsPro
 	// Upgrade arrays are either length of 1, others are 2.
 	// Non-upgraded values are always first, upgraded values are always last.
 	const index: number = (upgraded ? -1 : 0);
-
-	console.log(baseUnit, factionUnit, unit, index);
 
 	return ({
 		unitID,
@@ -233,4 +239,10 @@ const getEffectiveStats = ({ factionID, unitID, upgraded }: getEffectiveStatsPro
 	});
 }
 
-export default getEffectiveStats;
+// NOTE: No need for a getFleetStats function; stats initialize/update when:
+//		users load the page (fleet is empty)
+//		users increase count from 0 to X (pull one)
+//		upgrade units (update existing, if more than 0)
+//		change factions (update faction units only; 1-2 units plus mech/flagship)
+
+export default getUnitStats;

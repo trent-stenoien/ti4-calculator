@@ -29,6 +29,7 @@
 
 .column.center {
     justify-content: center;
+    font-weight: bold;
 }
 
 .column.left,

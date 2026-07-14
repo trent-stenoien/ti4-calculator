@@ -1,44 +1,56 @@
-import factions from '../constants/Factions';
+import factions, { type FactionID } from '../constants/Factions';
+import type { Player } from '../utils/Player';
 
-function FactionDropdown() {
+type FactionDropdownProps = {
+    player: Player,
+    side: string
+}
+
+function FactionDropdown({ player, side }: FactionDropdownProps) {
+
+    const label: string = (side == 'left' ? 'Attacker' : 'Defender');
+    const value: FactionID = player.config.factionID;
+    const onChange: Function = player.setConfigFaction;
+
     return (
-        <div className="row">
-            <div className="column left">
-                <select name="faction" id="faction-select" className="left">
-                    {factions
-                        .map((faction) => {
+        <div className={`column ${side}`}>
+            <select
+                id="faction-select"
+                name="faction"
+                aria-label={"faction" + label}
+                value={value}
+                onChange={e => onChange(e.target.value as FactionID)}
+                className={side}
+            >
+                {factions
+                    .map(f => {
                         return (
                             <option
-                                key={faction.key + 'Attacker'}
-                                value={faction.key}>
-                                {faction.name.replaceAll('The', '')}
+                                key={f.factionID + label}
+                                value={f.factionID}>
+                                {f.name.replaceAll('The', '')}
                             </option>
                         );
-                    }) }
-                </select>
-            </div>
-            <div className="column center">Faction</div>
-            <div className="column left">
-                <select name="faction" id="faction-select" className="right">
-                    {factions
-                        .map((faction) => {
-                            return (
-                                <option
-                                    key={faction.key + 'Attacker'}
-                                    value={faction.key}>
-                                    {faction.name.replaceAll('The', '')}
-                                </option>
-                            );
-                        })}
-                </select>
-            </div>
+                    })
+                }
+            </select>
         </div>
     )
 }
 
-export default FactionDropdown;
+type FactionDropdownRowProps = {
+    attacker: Player,
+    defender: Player
+};
 
+function FactionDropdownRow({ attacker, defender }: FactionDropdownRowProps) {
+    return (
+        <div key="faction" className="row">
+            <FactionDropdown player={attacker} side='left' />
+            <div className="column center">Faction</div>
+            <FactionDropdown player={defender} side='right' />
+        </div>
+    )
+}
 
-// <div>Factions</div>
-//     <option value="barony">Barony of Letnev</option>
-//     <option value="sol">Empire of Sol</option>
+export default FactionDropdownRow;
