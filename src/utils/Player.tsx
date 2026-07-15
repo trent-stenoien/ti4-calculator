@@ -62,8 +62,6 @@ function usePlayer(initialFaction: FactionID): Player {
 
     function toggleUpgrade(unitID: UnitID) {
 
-        console.log('toggleUpgrade');
-
         setConfig(prev => ({
             ...prev, units: {
                 ...prev.units, [unitID]: {

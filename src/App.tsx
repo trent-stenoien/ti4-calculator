@@ -1,12 +1,16 @@
 import FactionDropdown from './components/FactionDropdown'
-import UnitRows from './components/UnitRows'
+import Results from './components/Results';
+import UnitRows from './components/UnitRows';
+import battleSimulation, { type BattleSimulationResults } from './utils/BattleSim';
 import usePlayer, { type Player } from './utils/Player';
 
 function App() {
-    const attacker = usePlayer("arborec");
-    const defender = usePlayer("arborec");
 
-    console.log(attacker.config.factionID, attacker.config.units);
+    const attacker: Player = usePlayer("arborec");
+    const defender: Player = usePlayer("arborec");
+
+    // Stand-in for battle results
+    const results: BattleSimulationResults = battleSimulation({ attacker, defender });
 
     return (
         <div>
@@ -14,10 +18,12 @@ function App() {
             <div className="calc">
                 <FactionDropdown attacker={attacker} defender={defender} />
                 <UnitRows attacker={attacker} defender={defender} />
+                <h2 className="results-heading">Results</h2>
+                <Results results={results} />
             </div>
         </div>
-    )
-}
+    );
+};
 
 export default App
 

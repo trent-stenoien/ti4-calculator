@@ -24,10 +24,8 @@ const UnitInput = ({ player, unitState, unitID, side }: UnitInputProps) => {
                 <input
                     type="checkbox"
                     title="upgrade"
-
                     checked={upgraded}
                     onChange={e => {
-                        e.preventDefault();
                         toggleUpgrade(unitID)
                     }}
                 />

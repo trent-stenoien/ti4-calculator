@@ -34,7 +34,7 @@
 
 .column.left,
 .column.right {
-    justify-content: space-between; /* pins the two children to opposite edges */
+    justify-content: space-between;
     gap: 8px;
 }
 
@@ -61,3 +61,55 @@
     width: 70px;
     text-align: center;
 }
+
+.results-heading {
+    grid-column: 1 / -1;
+    margin: 10px 0 4px;
+    font-size: 1.2rem;
+    font-weight: 700;
+}
+
+.results {
+    grid-column: 1 / -1;
+    display: flex; /* keep your existing flex layout for the segments inside */
+}
+
+.results-segment {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    flex-grow: 0;
+    flex-shrink: 0;
+    min-width: 0;
+    transition: flex-basis 0.4s ease;
+    margin-bottom: 10px;
+    border-radius: 4px;
+}
+
+.results-label {
+    font-weight: 600;
+    font-size: 0.95rem;
+    letter-spacing: 0.02em;
+    white-space: nowrap;
+}
+
+    .results-pct {
+        font-size: 0.85rem;
+        opacity: 0.85;
+    }
+
+    .results-segment.attacker {
+        background-color: #5b8def;
+        color: #f5f6fa;
+    }
+
+    .results-segment.draw {
+        background-color: #55575e;
+        color: #f5f6fa;
+    }
+
+    .results-segment.defender {
+        background-color: #d8a63d;
+        color: #221a05;
+    }
