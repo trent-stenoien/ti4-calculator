@@ -22,6 +22,19 @@ export interface UnitDefinition {
 	specialText?: string[];
 }
 
+const DEFAULT_UNIT: Partial<UnitDefinition> = {
+	diceCount: [1],
+	moveSpeed: [1],
+	capacity: [0],
+	sustainDamage: [false],
+	antiFighterBarrage: [],
+	bombardment: [],
+	spaceCannon: [],
+	planetaryShield: [false],
+	bypassPlanetaryShield: [false],
+	specialText: [],
+};
+
 export interface UnitSummary {
 	unitID: UnitID,
 	name: string,
@@ -195,7 +208,7 @@ const units: UnitDefinition[] = [
 ];
 
 function updateUnit(unit: UnitDefinition, factionUnit: Partial<UnitDefinition>) {
-	return { ...unit, ...factionUnit };
+	return { ...DEFAULT_UNIT, ...unit, ...factionUnit };
 };
 
 type getUnitStatsProps = {
@@ -213,7 +226,7 @@ const getUnitStats = ({ unitID, factionID, upgraded }: getUnitStatsProps): UnitS
 			.factionUnits.find(u => u.unitID == unitID);
 
 	// Coalesce to faction unit, when available.
-	const unit: UnitDefinition = (factionUnit ? updateUnit(baseUnit, factionUnit) : baseUnit);
+	const unit: UnitDefinition = (factionUnit ? updateUnit(baseUnit, factionUnit) : updateUnit(baseUnit, {}));
 
 	// Upgrade arrays are either length of 1, others are 2.
 	// Non-upgraded values are always first, upgraded values are always last.

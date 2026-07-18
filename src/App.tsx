@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react';
 import FactionDropdown from './components/FactionDropdown'
 import Results from './components/Results';
 import UnitRows from './components/UnitRows';
@@ -6,11 +7,14 @@ import usePlayer, { type Player } from './utils/Player';
 
 function App() {
 
+    const [results, setResults] = useState<BattleSimulationResults>([0, 100, 0]);
+
     const attacker: Player = usePlayer("arborec");
     const defender: Player = usePlayer("arborec");
 
-    // Stand-in for battle results
-    const results: BattleSimulationResults = battleSimulation({ attacker, defender });
+    useEffect(() => {
+        setResults(battleSimulation({ attacker, defender }));
+    }, [attacker, defender]);
 
     return (
         <div>

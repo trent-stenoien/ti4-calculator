@@ -6,8 +6,6 @@ interface ResultsProps {
 
 const Results = ({ results }: ResultsProps) => {
 
-    console.log(results);
-
     // Ensure results sum up to 100 (+/- 1).
     // 0 is also allowed as inital/empty state.
     if ( ![0, 99, 100, 101].includes( results.reduce((a,b) => a+b) ) ) {
@@ -24,8 +22,6 @@ const Results = ({ results }: ResultsProps) => {
     const toRender = segments.length > 0
         ? segments
         : [{ key: "draw", label: "Draw", pct: 100 }];
-
-    console.log(toRender);
 
     return (
         <div className="results">
