@@ -5,7 +5,7 @@ import type { Player, PlayerUnitState } from "./Player";
 interface SimUnitState extends PlayerUnitState {
 	damaged: number;  // How many have sustained damage
 	destroyed: number;  // How many have been destroyed
-	factionID: FactionID
+	factionID: FactionID;
 };
 
 type BattleSimulationProps = {
@@ -27,16 +27,17 @@ const calculatePercentages = (
 	];
 };
 
-const rollSingleUnitAttack = (count: number, combatValue: number, diceCount: number) => {
+const rollSingleUnitAttack = (count: number, combatValue: number, diceCount: number, factionMod: number) => {
 
 	let hits = 0;
 	let shots = count * diceCount;
 
+	// Todo: Winnu flagship diceCount
+
 	for (let i = 0; i < shots; i++) {
 		const roll = Math.round(Math.random() * 10);
-		if (roll >= combatValue) {
-			hits++;
-		}
+
+		if ((roll + factionMod) >= combatValue) hits++;
 	}
 
 	return hits;
@@ -63,16 +64,26 @@ const rollAllUnitAttacks = (fleet: Record<UnitID, SimUnitState>, factionID: Fact
 
 	let hits = 0;
 
+	// Saardak: +1, Jol-Nar: -1, All others: 0
+	const factionMod: number = (
+		factionID == 'sardakk' ? 1
+			: (factionID == 'jolnar' ? -1
+				: 0
+			)
+	)
+
 	getArrayOfLiveUnits(fleet).map(u => {
 		const unitID: UnitID = u[0];
-		const { count, upgraded, damaged, destroyed }: SimUnitState = u[1];
+		const { count, upgraded, destroyed }: SimUnitState = u[1];
 		const { combatValue, diceCount }: UnitSummary = getUnitStats({ unitID, factionID, upgraded });
 
 		if (count - destroyed < 0) {
 			throw new Error(`Must have at least one non-destroyed ${unitID} to fire a volley. Count: ${count}, destroyed: ${destroyed}`)
 		}
 
-		hits += rollSingleUnitAttack(count - destroyed, combatValue, diceCount);
+		// console.log(unitID, count - destroyed, combatValue, diceCount, factionMod);
+
+		hits += rollSingleUnitAttack(count - destroyed, combatValue, diceCount, factionMod);
 	});
 
 	return hits;
@@ -86,11 +97,6 @@ const assignHits = (hits: number, fleet: Record<UnitID, SimUnitState>, factionID
 
 	for (const [unitID, unitState] of liveUnits) {
 		if (hits <= 0) break;
-
-
-		// convert this into "fleet[unitID]"?
-
-		console.log(unitState)
 
 		const { sustainDamage }: UnitSummary = getUnitStats({ unitID, factionID, upgraded: unitState.upgraded });
 
@@ -135,7 +141,6 @@ const assignHits = (hits: number, fleet: Record<UnitID, SimUnitState>, factionID
 				hits = 0;
 			}
 		}
-		console.log('after', unitState)
 	}
 
 	return hits; // leftover hits if the whole fleet was wiped out before hits ran out
@@ -151,8 +156,6 @@ const combat = (
 	let attackerFleetCount: number = getArrayOfLiveUnits(attackerFleet).length;
 	let defenderFleetCount: number = getArrayOfLiveUnits(defenderFleet).length;
 	let l: number = 0;
-
-	console.log(attackerFleetCount, defenderFleetCount);
 
 	// Todo: AFB, bombardment, space cannon here.
 
@@ -173,8 +176,6 @@ const combat = (
 		attackerFleetCount = getArrayOfLiveUnits(attackerFleet).length;
 		defenderFleetCount = getArrayOfLiveUnits(defenderFleet).length;
 
-		console.log('loop', getArrayOfLiveUnits(attackerFleet), getArrayOfLiveUnits(defenderFleet), attackerHits, defenderHits);
-
 		// Protect against endless loops
 		l++
 		if (l > 1000) {
@@ -187,7 +188,13 @@ const combat = (
 	else return 1;
 };
 
-function toSimUnits(units: Record<UnitID, PlayerUnitState>): Record<UnitID, SimUnitState> {
+const resetCombat = (fleet: Record<UnitID, SimUnitState>) =>
+	Object.entries(fleet).map(u => {
+		u[1].damaged = 0;
+		u[1].destroyed = 0;
+	});
+
+const toSimUnits = (units: Record<UnitID, PlayerUnitState>): Record<UnitID, SimUnitState> => {
     return Object.fromEntries(
         Object.entries(units).map(([id, unit]) => [
             id,
@@ -214,6 +221,9 @@ const battleSimulation = ({ attacker, defender }: BattleSimulationProps): Battle
 	for (let i = 0; i < simulations; i++) {
 
 		const result = combat(attackerFleet, attacker.config.factionID, defenderFleet, defender.config.factionID);
+
+		resetCombat(attackerFleet);
+		resetCombat(defenderFleet);
 
 		// attacker win = 0, draw = 1, defender win = 2
 		winTallies[result]++;
