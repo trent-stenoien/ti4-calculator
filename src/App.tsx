@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import FactionDropdown from './components/FactionDropdown'
 import Results from './components/Results';
 import UnitRows from './components/UnitRows';
+import ControlRow from './components/ControlRow';
 import battleSimulation, { type BattleSimulationResults } from './utils/BattleSim';
 import usePlayer, { type Player } from './utils/Player';
 
@@ -13,7 +14,9 @@ function App() {
     const defender: Player = usePlayer("arborec");
 
     useEffect(() => {
-        setResults(battleSimulation({ attacker, defender }));
+        for (let i = 0; i < 200; i++) {
+            setResults(battleSimulation({ attacker, defender }));
+        }
     }, [attacker, defender]);
 
     return (
@@ -22,6 +25,7 @@ function App() {
             <div className="calc">
                 <FactionDropdown attacker={attacker} defender={defender} />
                 <UnitRows attacker={attacker} defender={defender} />
+                <ControlRow attacker={attacker} defender={defender} />
                 <h2 className="results-heading">Results</h2>
                 <Results results={results} />
             </div>

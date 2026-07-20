@@ -3,16 +3,22 @@
 }
 
 .calc {
+    max-width: 450px;
     display: grid;
     grid-template-columns: 1fr 1.2fr 1fr;
     border: 1px solid #6f93bd;
     border-radius: 12px;
     overflow: hidden;
+    justify-self: center;
 }
 
 .row {
     display: contents; /* row has no box of its own; its columns join the grid directly */
 }
+
+    .row:last-child .column {
+        border-bottom: none;
+    }
 
 .column {
     display: flex;
@@ -23,44 +29,47 @@
     box-sizing: border-box;
 }
 
-.row:last-child .column {
-    border-bottom: none;
-}
+    .column.center {
+        justify-content: center;
+        font-weight: bold;
+    }
 
-.column.center {
-    justify-content: center;
-    font-weight: bold;
-}
+    .column.left,
+    .column.right {
+        justify-content: space-between;
+        gap: 8px;
+    }
 
-.column.left,
-.column.right {
-    justify-content: space-between;
-    gap: 8px;
-}
+    .column.right {
+        flex-direction: row-reverse;
+    }
 
-.column.right {
-    flex-direction: row-reverse;
-}
+    .column select {
+        height: 70%;
+        width: 100%;
+    }
 
-.column select {    
-    width: 100%;
-}
+    .column input[type="checkbox"] {
+        height: 100%;
+        width: 52px;
+        text-align: center;
+    }
 
-.column select {    
-    width: 100%;
-}
+    .column input[type="number"] {
+        height: 80%;
+        width: 70px;
+        text-align: center;
+    }
 
-.column input[type="checkbox"] {
-    height: 100%;
-    width: 52px;
-    text-align: center;
-}
+    .column:has(button),
+    .column:has(select) {
+        justify-content: center;
+    }
 
-.column input[type="number"] {
-    height: 100%;
-    width: 70px;
-    text-align: center;
-}
+    .column button {
+        height: 75%;
+        padding: 10px;
+    }
 
 .results-heading {
     grid-column: 1 / -1;
@@ -94,22 +103,22 @@
     white-space: nowrap;
 }
 
-    .results-pct {
-        font-size: 0.85rem;
-        opacity: 0.85;
-    }
+.results-pct {
+    font-size: 0.85rem;
+    opacity: 0.85;
+}
 
-    .results-segment.attacker {
-        background-color: #5b8def;
-        color: #f5f6fa;
-    }
+.results-segment.attacker {
+    background-color: #5b8def;
+    color: #f5f6fa;
+}
 
-    .results-segment.draw {
-        background-color: #55575e;
-        color: #f5f6fa;
-    }
+.results-segment.draw {
+    background-color: #55575e;
+    color: #f5f6fa;
+}
 
-    .results-segment.defender {
-        background-color: #d8a63d;
-        color: #221a05;
-    }
+.results-segment.defender {
+    background-color: #d8a63d;
+    color: #221a05;
+}

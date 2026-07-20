@@ -222,8 +222,10 @@ const getUnitStats = ({ unitID, factionID, upgraded }: getUnitStatsProps): UnitS
 	const baseUnit: UnitDefinition = units.find(u => u.unitID == unitID);
 
 	const factionUnit: Partial<UnitDefinition> =
-		factions.find(f => f.factionID == factionID)
-			.factionUnits.find(u => u.unitID == unitID);
+		factions
+			.find(f => f.factionID == factionID)
+			.factionUnits
+			.find(u => u.unitID == unitID);
 
 	// Coalesce to faction unit, when available.
 	const unit: UnitDefinition = (factionUnit ? updateUnit(baseUnit, factionUnit) : updateUnit(baseUnit, {}));
