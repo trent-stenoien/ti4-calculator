@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import type { UnitID } from '../constants/Units';
 import type { Player } from '../utils/Player';
 
 type ClearButtonProps = {
@@ -10,17 +9,11 @@ type ClearButtonProps = {
 
 const ClearButton = ({ player, label, side }: ClearButtonProps) => {
 
-    const setUnitCount: Function = player.setUnitCount;
-
-    function clearUnits() {
-        (Object.keys(player.config.units) as UnitID[]).forEach(unitID => {
-            setUnitCount(unitID, 0);
-        });
-    }
+    const clearUnits: Function = player.clearUnits;
 
     return (
         <div className={`column ${side}`}>
-            <button type="button" onClick={clearUnits}>{label}</button>
+            <button type="button" onClick={() => clearUnits()}>{label}</button>
         </div>
     );
 };

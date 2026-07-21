@@ -40,10 +40,6 @@
         gap: 8px;
     }
 
-    .column.right {
-        flex-direction: row-reverse;
-    }
-
     .column select {
         height: 70%;
         width: 100%;
@@ -61,15 +57,31 @@
         text-align: center;
     }
 
-    .column:has(button),
-    .column:has(select) {
+    .column.left:has(button),
+    .column.right:has(button),
+    .column.left:has(select),
+    .column.right:has(select) {
         justify-content: center;
     }
 
     .column button {
         height: 75%;
         padding: 10px;
+        border-radius: 8px;
     }
+
+.faction-row .column.left {
+    padding-left: 10px;
+}
+
+.faction-row .column.right {
+    padding-right: 10px;
+}
+
+.fleet-cost .column.left,
+.fleet-cost .column.right {
+    justify-content: center;
+}
 
 .results-heading {
     grid-column: 1 / -1;

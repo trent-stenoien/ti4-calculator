@@ -38,6 +38,7 @@ export interface Player {
     setConfigFaction: Function,
     setUnitCount: Function,
     toggleUpgrade: Function,
+    clearUnits: Function,
 }
 
 function usePlayer(initialFaction: FactionID): Player {
@@ -72,7 +73,11 @@ function usePlayer(initialFaction: FactionID): Player {
         }));
     }
 
-    return { config, setConfigFaction, setUnitCount, toggleUpgrade };
+    function clearUnits() {
+        setConfig(prev => ({ ...prev, units: createPlayerConfig(prev.factionID).units }));
+    }
+
+    return { config, setConfigFaction, setUnitCount, toggleUpgrade, clearUnits };
 }
 
 export default usePlayer;

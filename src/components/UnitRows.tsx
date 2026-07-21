@@ -1,6 +1,43 @@
 import { getUnitNames, type UnitID } from '../constants/Units';
 import type { Player, PlayerUnitState } from '../utils/Player';
 
+type UpgradeInputProps = {
+    unitID: UnitID,
+    label: string,
+    upgraded: boolean,
+    toggleUpgrade: Function
+}
+
+const UpgradeInput = ({ unitID, label, upgraded, toggleUpgrade }: UpgradeInputProps) =>
+    <div key={unitID + label + "Upgrade"} className="upgrade">
+        <input
+            type="checkbox"
+            title="upgrade"
+            checked={upgraded}
+            onChange={e => {
+                toggleUpgrade(unitID)
+            }}
+        />
+    </div>;
+
+type CountInputProps = {
+    unitID: UnitID,
+    label: string,
+    count: number,
+    setUnitCount: Function,
+}
+
+const CountInput = ({ unitID, label, count, setUnitCount }: CountInputProps) =>
+    <input
+        key={unitID + label + "Count"}
+        type="number"
+        value={count}
+        onChange={e => {
+            e.preventDefault();
+            setUnitCount(unitID, Number(e.target.value))
+        }}
+    />;
+
 type UnitInputProps = {
     player: Player,
     unitState: PlayerUnitState,
@@ -20,25 +57,19 @@ const UnitInput = ({ player, unitState, unitID, side }: UnitInputProps) => {
 
     return (
         <div key={unitID + label} className={`column ${side}`}>
-            <div key={unitID + label + "Upgrade"} className="upgrade">
-                <input
-                    type="checkbox"
-                    title="upgrade"
-                    checked={upgraded}
-                    onChange={e => {
-                        toggleUpgrade(unitID)
-                    }}
-                />
-            </div>
-            <input
-                key={unitID + label + "Count"}
-                type="number"
-                value={count}
-                onChange={e => {
-                    e.preventDefault();
-                    setUnitCount(unitID, Number(e.target.value))
-                }}
-            />
+            {
+                side == 'left'
+                    ? <>
+                        <UpgradeInput unitID={unitID} label={label} upgraded={upgraded} toggleUpgrade={toggleUpgrade} />
+                        <CountInput unitID={unitID} label={label} count={count} setUnitCount={setUnitCount} />
+                    </>
+                    : <>
+                        <CountInput unitID={unitID} label={label} count={count} setUnitCount={setUnitCount} />
+                        <UpgradeInput unitID={unitID} label={label} upgraded={upgraded} toggleUpgrade={toggleUpgrade} />
+                    </>
+            }
+            
+            
         </div>
     );
 };

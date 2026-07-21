@@ -45,7 +45,7 @@ type FactionDropdownRowProps = {
 
 function FactionDropdownRow({ attacker, defender }: FactionDropdownRowProps) {
     return (
-        <div key="faction" className="row">
+        <div key="faction" className="row faction-row">
             <FactionDropdown player={attacker} side='left' />
             <div className="column center">Faction</div>
             <FactionDropdown player={defender} side='right' />

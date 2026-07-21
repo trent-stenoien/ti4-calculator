@@ -3,7 +3,7 @@ import getUnitStats, { type UnitID, type UnitSummary } from "../constants/Units"
 import type { Player, PlayerUnitState } from "./Player";
 import typedEntries from "./TypedEntries";
 
-interface SimUnitState extends PlayerUnitState {
+export interface SimUnitState extends PlayerUnitState {
 	damaged: number;  // How many have sustained damage
 	destroyed: number;  // How many have been destroyed
 	factionID: FactionID;
@@ -43,7 +43,7 @@ const rollSingleUnitAttack = (count: number, combatValue: number, diceCount: num
 	return hits;
 }
 
-const getArrayOfLiveUnits = (fleet: Record<UnitID, SimUnitState>, sustain?: boolean, factionID?: FactionID): [UnitID, SimUnitState][] =>
+export const getArrayOfLiveUnits = (fleet: Record<UnitID, SimUnitState>, sustain?: boolean, factionID?: FactionID): [UnitID, SimUnitState][] =>
 	typedEntries(fleet)
 		// Filter out all 0 counts and all units with 100% destroyed.
 		.filter(([unitID, unit]) => unit.count > 0 && unit.count > unit.destroyed)
@@ -92,10 +92,10 @@ const rollAllUnitAttacks = (fleet: Record<UnitID, SimUnitState>, factionID: Fact
 	return hits;
 };
 
-const sortUnits = (fleet: [UnitID, SimUnitState][]) => 
+export const sortUnits = (fleet: [UnitID, SimUnitState][]) =>
 	fleet.sort(([_a, aUnit], [_b, bUnit]) => aUnit.stats.cost - bUnit.stats.cost);
 
-const assignHits = (hits: number, fleet: Record<UnitID, SimUnitState>, factionID: FactionID, sustainRound?: boolean): number => {
+export const assignHits = (hits: number, fleet: Record<UnitID, SimUnitState>, factionID: FactionID, sustainRound?: boolean): number => {
 
 	const sortedLiveUnits = sortUnits(
 		getArrayOfLiveUnits(fleet)
@@ -170,7 +170,7 @@ const spaceCannon = (activeFleet: Record<UnitID, SimUnitState>, targetedFleet: R
 };
 
 // Get ship count for Winnu's flagship dice count.
-const getEnemyShipCount = (fleet: Record<UnitID, SimUnitState>): number =>
+export const getEnemyShipCount = (fleet: Record<UnitID, SimUnitState>): number =>
 	Object.entries(fleet)
 		.map(([unitID, unit]) => (['fighter', 'infantry', 'pds'].includes(unitID) ? 0 : unit.count - unit.destroyed))
 		.reduce((a, b) => a + b);
@@ -238,7 +238,7 @@ const resetCombat = (fleet: Record<UnitID, SimUnitState>) =>
 		unit.destroyed = 0;
 	});
 
-const toSimUnits = (units: Record<UnitID, PlayerUnitState>, factionID: FactionID): Record<UnitID, SimUnitState> => {
+export const toSimUnits = (units: Record<UnitID, PlayerUnitState>, factionID: FactionID): Record<UnitID, SimUnitState> => {
 	return Object.fromEntries(
 		typedEntries(units)
 			.map(([unitID, unit]) => {
@@ -282,12 +282,3 @@ const battleSimulation = ({ attacker, defender }: BattleSimulationProps): Battle
 };
 
 export default battleSimulation;
-
-
-// NOTE: Winnu flagship needs custom dice count.
-// "When this unit makes a combat roll, it rolls a number of
-// dice equal to the number of your opponent's non-fighter ships in this system."
-
-// Mentak mech: Other players' ground forces on this planet cannot use SUSTAIN DAMAGE.
-
-// NRA mech: Can fight in space at 8x2. Loses sustain damage.
