@@ -1,5 +1,6 @@
 {
-  "name": "ti4battlecalculator-react",
+  "name": "ti4-calculator",
+  "homepage": "https://trent-stenoien.github.io/ti4-calculator/",
   "private": true,
   "version": "0.0.0",
   "type": "module",
@@ -9,9 +10,12 @@
     "lint": "oxlint",
     "preview": "vite preview",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "predeploy": "npm run build",
+    "deploy": "gh-pages -d dist"
   },
   "dependencies": {
+    "gh-pages": "^6.3.0",
     "react": "^19.2.7",
     "react-dom": "^19.2.7",
     "react-error-boundary": "^6.1.2"

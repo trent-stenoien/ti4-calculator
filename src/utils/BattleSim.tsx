@@ -4,8 +4,8 @@ import type { Player, PlayerUnitState } from "./Player";
 import typedEntries from "./TypedEntries";
 
 export interface SimUnitState extends PlayerUnitState {
-	damaged: number;  // How many have sustained damage
-	destroyed: number;  // How many have been destroyed
+	damaged: number;
+	destroyed: number;
 	factionID: FactionID;
 	stats: UnitSummary;
 };
@@ -18,10 +18,8 @@ export type BattleSimulationOptions = {
 
 export type BattleSimulationResults = [number, number, number];
 
-// Ships, and everything else that fights in space combat.
+// Lists of units that partake in regular combat in ground vs space. PDS not included as that is pre-combat.
 const SPACE_UNIT_IDS: UnitID[] = ['carrier', 'cruiser', 'destroyer', 'dreadnought', 'fighter', 'flagship', 'warsun'];
-
-// Ground forces; the only units that participate in ground combat.
 const GROUND_UNIT_IDS: UnitID[] = ['infantry', 'mech'];
 
 const calculatePercentages = (
@@ -55,20 +53,12 @@ type GetArrayOfLiveUnitsProps = {
 	sustain?: boolean
 };
 
+// Steps: 1. Filter but unitFilter, 2. filter out 0-counts and all-destroyed, 3. during sustain rounds filter out units that can't currently sustain.
 export const getArrayOfLiveUnits = ({ fleet, unitFilter, sustain }: GetArrayOfLiveUnitsProps): [UnitID, SimUnitState][] =>
 	typedEntries(fleet)
-		// Restrict to the unit types relevant to the current combat (ground vs space), when given.
 		.filter(([unitID]) => !unitFilter || unitFilter.includes(unitID))
-		// Filter out all 0 counts and all units with 100% destroyed.
 		.filter(([_, unit]) => unit.count > 0 && unit.count > unit.destroyed)
-		// During sustain damage round, filter out units that can't currently sustain. Otherwise, return all.
-		.filter(([_, unit]) => {
-			if (sustain) {
-				const hasUndamagedUnits: boolean = unit.count > unit.damaged;
-				if (unit.stats.sustainDamage || !hasUndamagedUnits) return false;
-			}
-			return true;
-		});
+		.filter(([_, unit]) => !(sustain && (unit.stats.sustainDamage || unit.count <= unit.damaged)));
 
 
 const rollAllUnitAttacks = (fleet: Record<UnitID, SimUnitState>, factionID: FactionID, enemyShipCount?: number, unitFilter?: UnitID[]): number => {
@@ -317,9 +307,13 @@ export const toSimUnits = (units: Record<UnitID, PlayerUnitState>, factionID: Fa
     ) as Record<UnitID, SimUnitState>;
 }
 
-const battleSimulation = (attacker: Player, defender: Player, options: BattleSimulationOptions): BattleSimulationResults => {
+export const TOTAL_SIMULATIONS = 50000;
+export const SIMULATION_BATCH_SIZE = 1000;
 
-	const simulations = 1000;
+// Generator function that "yields" results in batches of SIMULATION_BATCH_SIZE.
+// Allows App.tsx to call 50 loops of 1000 without blocking the main thread for the entire run.
+function* battleSimulation(attacker: Player, defender: Player, options: BattleSimulationOptions): Generator<BattleSimulationResults, void, void> {
+
 	const winTallies: BattleSimulationResults = [0, 0, 0]; // attacker, draw, defender
 
 	const attackerFleet: Record<UnitID, SimUnitState> = toSimUnits(attacker.config.units, attacker.config.factionID);
@@ -330,11 +324,11 @@ const battleSimulation = (attacker: Player, defender: Player, options: BattleSim
 	const attackerFleetCount: number = getArrayOfLiveUnits({ fleet: attackerFleet, unitFilter }).length;
 	const defenderFleetCount: number = getArrayOfLiveUnits({ fleet: defenderFleet, unitFilter }).length;
 
-	if (attackerFleetCount == 0 && defenderFleetCount == 0) return [0, 100, 0];
-	if (attackerFleetCount >= 1 && defenderFleetCount == 0) return [100, 0, 0];
-	if (attackerFleetCount == 0 && defenderFleetCount >= 1) return [0, 0, 100];
+	if (attackerFleetCount == 0 && defenderFleetCount == 0) { yield [0, 100, 0]; return; }
+	if (attackerFleetCount >= 1 && defenderFleetCount == 0) { yield [100, 0, 0]; return; }
+	if (attackerFleetCount == 0 && defenderFleetCount >= 1) { yield [0, 0, 100]; return; }
 
-	for (let i = 0; i < simulations; i++) {
+	for (let i = 0; i < TOTAL_SIMULATIONS; i++) {
 
 		const result = combat(attackerFleet, attacker.config.factionID, defenderFleet, defender.config.factionID, options.combatType);
 
@@ -343,9 +337,11 @@ const battleSimulation = (attacker: Player, defender: Player, options: BattleSim
 
 		// attacker win = 0, draw = 1, defender win = 2
 		winTallies[result]++;
-	};
 
-	return calculatePercentages(winTallies, simulations);
+		if ((i + 1) % SIMULATION_BATCH_SIZE == 0) {
+			yield calculatePercentages(winTallies, i + 1);
+		}
+	};
 };
 
 export default battleSimulation;

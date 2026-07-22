@@ -13,7 +13,7 @@
 }
 
 .row {
-    display: contents; /* row has no box of its own; its columns join the grid directly */
+    display: contents;
 }
 
     .row:last-child .column {
@@ -25,7 +25,7 @@
     align-items: center;
     padding: 0px;
     border-bottom: 1px solid #6f93bd;
-    min-height: 2.75rem; /* keeps every row the same height */
+    min-height: 2.75rem;
     box-sizing: border-box;
 }
 
@@ -43,6 +43,10 @@
     .column select {
         height: 70%;
         width: 100%;
+    }
+
+    .column input:disabled {
+        visibility: hidden;
     }
 
     .column input[type="checkbox"] {
@@ -92,7 +96,7 @@
 
 .results {
     grid-column: 1 / -1;
-    display: flex; /* keep your existing flex layout for the segments inside */
+    display: flex;
 }
 
 .results-segment {
@@ -134,3 +138,85 @@
     background-color: #d8a63d;
     color: #221a05;
 }
+
+.info {
+    max-width: 450px;
+    margin-top: 12px;
+    justify-self: center;
+    border: 1px solid #6f93bd;
+    border-radius: 12px;
+    overflow: hidden;
+    text-align: left;
+}
+
+.info-toggle {
+    display: block;
+    width: 100%;
+    padding: 10px;
+    border: none;
+    border-radius: 0;
+    background: none;
+    color: inherit;
+    font: inherit;
+    font-weight: 600;
+    text-align: center;
+    cursor: pointer;
+}
+
+.info.expanded .info-toggle {
+    border-bottom: 1px solid #6f93bd;
+}
+
+.info-content {
+    padding: 12px 16px 16px;
+    font-size: 0.95rem;
+}
+
+    .info-section {
+        margin: 12px 0 4px;
+    }
+
+    .info-section h3 {
+        margin: 0;
+        font-size: 1rem;
+    }
+
+    .info-section-toggle {
+        display: block;
+        width: 100%;
+        padding: 0;
+        border: none;
+        background: none;
+        color: inherit;
+        font: inherit;
+        font-weight: inherit;
+        text-align: left;
+        cursor: pointer;
+    }
+
+    .info-section.open {
+        border: 1px solid #6f93bd;
+        border-radius: 12px;
+        overflow: hidden;
+    }
+
+        .info-section.open .info-section-toggle {
+            padding: 8px 12px;
+            background-color: #9fb8d6;
+            color: #1b3b6f;
+        }
+
+    .info-content ul {
+        margin: 0;
+        padding: 8px 12px 8px 28px;
+        background-color: #c7d6e8;
+        color: #000;
+    }
+
+    .info-content li + li {
+        margin-top: 4px;
+    }
+
+    .info-content a {
+        color: inherit;
+    }

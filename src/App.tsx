@@ -4,6 +4,7 @@ import Results from './components/Results';
 import UnitRows from './components/UnitRows';
 import FleetCost from './components/FleetCost';
 import ControlRow from './components/ControlRow';
+import Info from './components/Info';
 import battleSimulation, { type BattleSimulationResults, type CombatType } from './utils/BattleSim';
 import usePlayer, { type Player } from './utils/Player';
 
@@ -16,7 +17,22 @@ function App() {
     const defender: Player = usePlayer("arborec");
 
     useEffect(() => {
-        setResults(battleSimulation(attacker, defender, { combatType }));
+        let cancelled = false;
+        const simulation = battleSimulation(attacker, defender, { combatType });
+
+        const runBatch = () => {
+            if (cancelled) return;
+
+            const { value, done } = simulation.next();
+            if (!done) {
+                setResults(value);
+                setTimeout(runBatch, 0);
+            }
+        };
+
+        runBatch();
+
+        return () => { cancelled = true; };
     }, [attacker, defender, combatType]);
 
     return (
@@ -30,6 +46,7 @@ function App() {
                 <h2 className="results-heading">Results</h2>
                 <Results results={results} />
             </div>
+            <Info />
         </div>
     );
 };

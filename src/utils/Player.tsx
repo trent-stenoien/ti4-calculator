@@ -12,7 +12,7 @@ interface PlayerConfig {
     units: Record<UnitID, PlayerUnitState>;
 }
 
-function createPlayerConfig(factionID: FactionID): PlayerConfig {
+const createPlayerConfig = (factionID: FactionID): PlayerConfig => {
     return {
         factionID,
         units: {
@@ -30,9 +30,6 @@ function createPlayerConfig(factionID: FactionID): PlayerConfig {
     };
 }
 
-// Range: 0-100
-const boundCount = (count: number):number => Math.min(Math.max(count, 0), 100);
-
 export interface Player {
     config: PlayerConfig,
     setConfigFaction: Function,
@@ -41,28 +38,25 @@ export interface Player {
     clearUnits: Function,
 }
 
-function usePlayer(initialFaction: FactionID): Player {
+const usePlayer = (initialFaction: FactionID): Player => {
     const [config, setConfig] = useState<PlayerConfig>(() => createPlayerConfig(initialFaction));
 
-    function setConfigFaction(factionID: FactionID) {
+    const setConfigFaction = (factionID: FactionID) => {
         setConfig(prev => ({ ...prev, factionID }));
-
-        // Update flagship, mech, and faction units in BattleSim
     };
 
-    function setUnitCount(unitID: UnitID, count: number) {
+    const setUnitCount = (unitID: UnitID, count: number): void => {
         setConfig(prev => ({
             ...prev, units: {
                 ...prev.units, [unitID]: {
                     ...prev.units[unitID],
-                    count: boundCount(count)
+                    count: Math.min(Math.max(count, 0), 100) // Range: 0 - 100
                 }
             }
         }));
     }
 
-    function toggleUpgrade(unitID: UnitID) {
-
+    const toggleUpgrade = (unitID: UnitID): void => {
         setConfig(prev => ({
             ...prev, units: {
                 ...prev.units, [unitID]: {
@@ -73,7 +67,7 @@ function usePlayer(initialFaction: FactionID): Player {
         }));
     }
 
-    function clearUnits() {
+    const clearUnits = (): void => {
         setConfig(prev => ({ ...prev, units: createPlayerConfig(prev.factionID).units }));
     }
 

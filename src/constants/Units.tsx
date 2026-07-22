@@ -211,13 +211,7 @@ function updateUnit(unit: UnitDefinition, factionUnit: Partial<UnitDefinition>) 
 	return { ...DEFAULT_UNIT, ...unit, ...factionUnit };
 };
 
-type getUnitStatsProps = {
-	unitID: UnitID,
-	factionID: FactionID,
-	upgraded: boolean,
-};
-
-const getUnitStats = ({ unitID, factionID, upgraded }: getUnitStatsProps): UnitSummary => {
+const resolveUnitDefinition = (unitID: UnitID, factionID: FactionID): UnitDefinition => {
 
 	const baseUnit: UnitDefinition = units.find(u => u.unitID == unitID);
 
@@ -228,7 +222,40 @@ const getUnitStats = ({ unitID, factionID, upgraded }: getUnitStatsProps): UnitS
 			.find(u => u.unitID == unitID);
 
 	// Coalesce to faction unit, when available.
-	const unit: UnitDefinition = (factionUnit ? updateUnit(baseUnit, factionUnit) : updateUnit(baseUnit, {}));
+	return (factionUnit ? updateUnit(baseUnit, factionUnit) : updateUnit(baseUnit, {}));
+};
+
+// A unit only has a real upgrade ("II") level if at least one of its stat arrays
+// has a second entry; units whose arrays are all length 1 have identical stats
+// regardless of the `upgraded` flag, so there's nothing to toggle.
+export const canUpgrade = (unitID: UnitID, factionID: FactionID): boolean => {
+
+	const unit = resolveUnitDefinition(unitID, factionID);
+
+	return [
+		unit.cost,
+		unit.combatValue,
+		unit.diceCount,
+		unit.moveSpeed,
+		unit.capacity,
+		unit.sustainDamage,
+		unit.antiFighterBarrage,
+		unit.bombardment,
+		unit.spaceCannon,
+		unit.planetaryShield,
+		unit.bypassPlanetaryShield,
+	].some(field => (field?.length ?? 0) > 1);
+};
+
+type getUnitStatsProps = {
+	unitID: UnitID,
+	factionID: FactionID,
+	upgraded: boolean,
+};
+
+const getUnitStats = ({ unitID, factionID, upgraded }: getUnitStatsProps): UnitSummary => {
+
+	const unit: UnitDefinition = resolveUnitDefinition(unitID, factionID);
 
 	// Upgrade arrays are either length of 1, others are 2.
 	// Non-upgraded values are always first, upgraded values are always last.
