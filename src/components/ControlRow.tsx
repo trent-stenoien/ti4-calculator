@@ -1,5 +1,5 @@
-import { useState } from 'react';
 import type { Player } from '../utils/Player';
+import type { CombatType } from '../utils/BattleSim';
 
 type ClearButtonProps = {
     player: Player,
@@ -19,7 +19,7 @@ const ClearButton = ({ player, label, side }: ClearButtonProps) => {
 };
 
 type CombatTypeToggleProps = {
-    combatType: string,
+    combatType: CombatType,
     setCombatType: Function
 };
 
@@ -36,12 +36,12 @@ const CombatTypeToggle = ({ combatType, setCombatType }: CombatTypeToggleProps) 
 
 type ControlRowProps = {
     attacker: Player,
-    defender: Player
+    defender: Player,
+    combatType: CombatType,
+    setCombatType: Function
 };
 
-const ControlRow = ({ attacker, defender }: ControlRowProps) => {
-
-    const [combatType, setCombatType] = useState<string>('Space');
+const ControlRow = ({ attacker, defender, combatType, setCombatType }: ControlRowProps) => {
 
     return (
         <div className="row control-row">

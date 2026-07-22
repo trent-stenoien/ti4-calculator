@@ -10,13 +10,19 @@ export interface SimUnitState extends PlayerUnitState {
 	stats: UnitSummary;
 };
 
-type BattleSimulationProps = {
-	attacker: Player,
-	defender: Player,
-	options?: Object, // Placeholder for future OptionsProp
+export type CombatType = 'Space' | 'Ground';
+
+export type BattleSimulationOptions = {
+	combatType: CombatType,
 };
 
 export type BattleSimulationResults = [number, number, number];
+
+// Ships, and everything else that fights in space combat.
+const SPACE_UNIT_IDS: UnitID[] = ['carrier', 'cruiser', 'destroyer', 'dreadnought', 'fighter', 'flagship', 'warsun'];
+
+// Ground forces; the only units that participate in ground combat.
+const GROUND_UNIT_IDS: UnitID[] = ['infantry', 'mech'];
 
 const calculatePercentages = (
 	tallies: BattleSimulationResults,
@@ -43,22 +49,29 @@ const rollSingleUnitAttack = (count: number, combatValue: number, diceCount: num
 	return hits;
 }
 
-export const getArrayOfLiveUnits = (fleet: Record<UnitID, SimUnitState>, sustain?: boolean, factionID?: FactionID): [UnitID, SimUnitState][] =>
-	typedEntries(fleet)
-		// Filter out all 0 counts and all units with 100% destroyed.
-		.filter(([unitID, unit]) => unit.count > 0 && unit.count > unit.destroyed)
+type GetArrayOfLiveUnitsProps = {
+	fleet: Record<UnitID, SimUnitState>,
+	unitFilter?: UnitID[],
+	sustain?: boolean
+};
 
+export const getArrayOfLiveUnits = ({ fleet, unitFilter, sustain }: GetArrayOfLiveUnitsProps): [UnitID, SimUnitState][] =>
+	typedEntries(fleet)
+		// Restrict to the unit types relevant to the current combat (ground vs space), when given.
+		.filter(([unitID]) => !unitFilter || unitFilter.includes(unitID))
+		// Filter out all 0 counts and all units with 100% destroyed.
+		.filter(([_, unit]) => unit.count > 0 && unit.count > unit.destroyed)
 		// During sustain damage round, filter out units that can't currently sustain. Otherwise, return all.
-		.filter(([unitID, unit]) => {
+		.filter(([_, unit]) => {
 			if (sustain) {
 				const hasUndamagedUnits: boolean = unit.count > unit.damaged;
 				if (unit.stats.sustainDamage || !hasUndamagedUnits) return false;
 			}
 			return true;
 		});
-	
 
-const rollAllUnitAttacks = (fleet: Record<UnitID, SimUnitState>, factionID: FactionID, enemyShipCount?: number): number => {
+
+const rollAllUnitAttacks = (fleet: Record<UnitID, SimUnitState>, factionID: FactionID, enemyShipCount?: number, unitFilter?: UnitID[]): number => {
 
 	let hits = 0;
 
@@ -68,7 +81,7 @@ const rollAllUnitAttacks = (fleet: Record<UnitID, SimUnitState>, factionID: Fact
 			: (factionID == 'jolnar' ? -1
 				: 0 ));
 
-	getArrayOfLiveUnits(fleet).map(([unitID, unit]) => {
+	getArrayOfLiveUnits({fleet, unitFilter}).map(([unitID, unit]) => {
 
 		const { count, destroyed, stats }: SimUnitState = unit;
 		let { combatValue, diceCount }: UnitSummary = stats;
@@ -95,10 +108,11 @@ const rollAllUnitAttacks = (fleet: Record<UnitID, SimUnitState>, factionID: Fact
 export const sortUnits = (fleet: [UnitID, SimUnitState][]) =>
 	fleet.sort(([_a, aUnit], [_b, bUnit]) => aUnit.stats.cost - bUnit.stats.cost);
 
-export const assignHits = (hits: number, fleet: Record<UnitID, SimUnitState>, factionID: FactionID, sustainRound?: boolean): number => {
+
+export const assignHits = (hits: number, fleet: Record<UnitID, SimUnitState>, unitFilter?: UnitID[], sustainRound?: boolean): number => {
 
 	const sortedLiveUnits = sortUnits(
-		getArrayOfLiveUnits(fleet)
+		getArrayOfLiveUnits({fleet, unitFilter})
 			.filter(([_, { count, damaged, destroyed, stats }]) =>
 				!sustainRound
 				|| ( stats.sustainDamage && count - damaged > 0 && count - destroyed > 0 )
@@ -151,8 +165,9 @@ const antiFighterBarrage = (barragingFleet: Record<UnitID, SimUnitState>, barrag
 };
 
 // Todo: This is wrong. 1 dread vs 3 PDS should be ~50/50 but it's 0/100.
-// Todo: Combine this into a single "special attack" function that passes in the attack type.
-const spaceCannon = (activeFleet: Record<UnitID, SimUnitState>, targetedFleet: Record<UnitID, SimUnitState>) => {
+// Space Cannon Offense (space combat) targets ships; Space Cannon Defense (ground combat)
+// targets the invading ground forces instead, so the caller supplies which unit types are valid targets.
+const spaceCannon = (activeFleet: Record<UnitID, SimUnitState>, targetedFleet: Record<UnitID, SimUnitState>, targetFilter: UnitID[]) => {
 
 	if (Object.entries(targetedFleet).length == 0) return;
 
@@ -165,8 +180,32 @@ const spaceCannon = (activeFleet: Record<UnitID, SimUnitState>, targetedFleet: R
 		})
 		.reduce((a, b) => a + b, 0);
 
-	hits = assignHits(hits, targetedFleet, targetedFleet.carrier.factionID, true);
-	if (hits > 0) assignHits(hits, targetedFleet, targetedFleet.carrier.factionID);
+	hits = assignHits(hits, targetedFleet, targetFilter, true);
+	if (hits > 0) assignHits(hits, targetedFleet, targetFilter, false);
+};
+
+// Attacker-only, pre-ground-combat action. Blocked by the defender's Planetary Shield unless the
+// attacker has a unit that bypasses it (e.g. War Sun). Hits land on the defender's ground forces.
+const bombardment = (attackerFleet: Record<UnitID, SimUnitState>, defenderFleet: Record<UnitID, SimUnitState>) => {
+
+	const shieldActive: boolean = typedEntries(defenderFleet)
+		.some(([_, unit]) => unit.count - unit.destroyed > 0 && unit.stats.planetaryShield);
+
+	const shieldBypassed: boolean = typedEntries(attackerFleet)
+		.some(([_, unit]) => unit.count - unit.destroyed > 0 && unit.stats.bypassPlanetaryShield);
+
+	if (shieldActive && !shieldBypassed) return;
+
+	let hits: number = typedEntries(attackerFleet)
+		.filter(([_, unit]) => unit.count - unit.destroyed > 0 && unit.stats.bombardment)
+		.map(([_, { count, destroyed, stats }]) => {
+			const { value, diceCount } = stats.bombardment;
+			return rollSingleUnitAttack(count - destroyed, value, diceCount, 0);
+		})
+		.reduce((a, b) => a + b, 0);
+
+	hits = assignHits(hits, defenderFleet, GROUND_UNIT_IDS, true);
+	if (hits > 0) assignHits(hits, defenderFleet, GROUND_UNIT_IDS, false);
 };
 
 // Get ship count for Winnu's flagship dice count.
@@ -175,24 +214,18 @@ export const getEnemyShipCount = (fleet: Record<UnitID, SimUnitState>): number =
 		.map(([unitID, unit]) => (['fighter', 'infantry', 'pds'].includes(unitID) ? 0 : unit.count - unit.destroyed))
 		.reduce((a, b) => a + b);
 
-const combat = (
+// Regular combat rounds shared by both space and ground combat, restricted to whichever unit
+// types are eligible to fight (SPACE_UNIT_IDS or GROUND_UNIT_IDS).
+const runCombatRounds = (
 	attackerFleet: Record<UnitID, SimUnitState>,
 	attackerFactionID: FactionID,
 	defenderFleet: Record<UnitID, SimUnitState>,
 	defenderFactionID: FactionID,
+	unitFilter: UnitID[],
 ): number => {
 
-	console.log(attackerFleet, defenderFleet)
-
-	// Todo: AFB, bombardment, space cannon here.
-	antiFighterBarrage(attackerFleet, defenderFleet.fighter);
-	antiFighterBarrage(defenderFleet, attackerFleet.fighter);
-
-	spaceCannon(attackerFleet, defenderFleet);
-	spaceCannon(defenderFleet, attackerFleet);
-
-	let attackerFleetCount: number = getArrayOfLiveUnits(attackerFleet).length;
-	let defenderFleetCount: number = getArrayOfLiveUnits(defenderFleet).length;
+	let attackerFleetCount: number = getArrayOfLiveUnits({ fleet: attackerFleet, unitFilter }).length;
+	let defenderFleetCount: number = getArrayOfLiveUnits({ fleet: defenderFleet, unitFilter }).length;
 	let l: number = 0;
 
 	// Loop through these until one side wins
@@ -201,29 +234,33 @@ const combat = (
 		let attackerHits: number = rollAllUnitAttacks(
 			attackerFleet,
 			attackerFactionID,
-			(attackerFactionID == 'winnu' ? getEnemyShipCount(defenderFleet) : undefined)
+			(attackerFactionID == 'winnu' ? getEnemyShipCount(defenderFleet) : undefined),
+			unitFilter
 		);
 
 		let defenderHits: number = rollAllUnitAttacks(
 			defenderFleet,
 			defenderFactionID,
-			(defenderFactionID == 'winnu' ? getEnemyShipCount(attackerFleet) : undefined)
+			(defenderFactionID == 'winnu' ? getEnemyShipCount(attackerFleet) : undefined),
+			unitFilter
 		);
 
-		// Sustain damage
-		attackerHits = assignHits(attackerHits, defenderFleet, defenderFactionID, true);
-		defenderHits = assignHits(defenderHits, attackerFleet, attackerFactionID, true);
+		// Sustain damage, if able
+		attackerHits = assignHits(attackerHits, defenderFleet, unitFilter, true);
+		defenderHits = assignHits(defenderHits, attackerFleet, unitFilter, true);
 
-		if (attackerHits > 0) attackerHits = assignHits(attackerHits, defenderFleet, defenderFactionID);
-		if (defenderHits > 0) defenderHits = assignHits(defenderHits, attackerFleet, attackerFactionID);
+		// Assign hits
+		if (attackerHits > 0) attackerHits = assignHits(attackerHits, defenderFleet, unitFilter, false);
+		if (defenderHits > 0) defenderHits = assignHits(defenderHits, attackerFleet, unitFilter, false);
 
-		attackerFleetCount = getArrayOfLiveUnits(attackerFleet).length;
-		defenderFleetCount = getArrayOfLiveUnits(defenderFleet).length;
+		// Check while loop conditions
+		attackerFleetCount = getArrayOfLiveUnits({ fleet: attackerFleet, unitFilter }).length;
+		defenderFleetCount = getArrayOfLiveUnits({ fleet: defenderFleet, unitFilter }).length;
 
 		// Protect against endless loops
 		l++
 		if (l > 1000) {
-			throw new Error(`Potential endless loop in combat().`)
+			throw new Error(`Potential endless loop in runCombatRounds().`)
 		}
 	}
 
@@ -232,8 +269,36 @@ const combat = (
 	else return 1;
 };
 
+const combat = (
+	attackerFleet: Record<UnitID, SimUnitState>,
+	attackerFactionID: FactionID,
+	defenderFleet: Record<UnitID, SimUnitState>,
+	defenderFactionID: FactionID,
+	combatType: CombatType,
+): number => {
+
+	if (combatType == 'Ground') {
+
+		// Space Cannon Defense fires before anything else and hits the invading ground forces, not ships.
+		spaceCannon(defenderFleet, attackerFleet, GROUND_UNIT_IDS);
+
+		bombardment(attackerFleet, defenderFleet);
+
+		return runCombatRounds(attackerFleet, attackerFactionID, defenderFleet, defenderFactionID, GROUND_UNIT_IDS);
+	}
+
+	// Space Cannon Offense fires before Anti-Fighter Barrage.
+	spaceCannon(attackerFleet, defenderFleet, SPACE_UNIT_IDS);
+	spaceCannon(defenderFleet, attackerFleet, SPACE_UNIT_IDS);
+
+	antiFighterBarrage(attackerFleet, defenderFleet.fighter);
+	antiFighterBarrage(defenderFleet, attackerFleet.fighter);
+
+	return runCombatRounds(attackerFleet, attackerFactionID, defenderFleet, defenderFactionID, SPACE_UNIT_IDS);
+};
+
 const resetCombat = (fleet: Record<UnitID, SimUnitState>) =>
-	Object.entries(fleet).map(([unitID, unit]) => {
+	Object.entries(fleet).map(([_, unit]) => {
 		unit.damaged = 0;
 		unit.destroyed = 0;
 	});
@@ -252,7 +317,7 @@ export const toSimUnits = (units: Record<UnitID, PlayerUnitState>, factionID: Fa
     ) as Record<UnitID, SimUnitState>;
 }
 
-const battleSimulation = ({ attacker, defender }: BattleSimulationProps): BattleSimulationResults => {
+const battleSimulation = (attacker: Player, defender: Player, options: BattleSimulationOptions): BattleSimulationResults => {
 
 	const simulations = 1000;
 	const winTallies: BattleSimulationResults = [0, 0, 0]; // attacker, draw, defender
@@ -260,8 +325,10 @@ const battleSimulation = ({ attacker, defender }: BattleSimulationProps): Battle
 	const attackerFleet: Record<UnitID, SimUnitState> = toSimUnits(attacker.config.units, attacker.config.factionID);
 	const defenderFleet: Record<UnitID, SimUnitState> = toSimUnits(defender.config.units, defender.config.factionID);
 
-	const attackerFleetCount: number = getArrayOfLiveUnits(attackerFleet).length;
-	const defenderFleetCount: number = getArrayOfLiveUnits(defenderFleet).length;
+	const unitFilter: UnitID[] = (options.combatType == 'Ground' ? GROUND_UNIT_IDS : SPACE_UNIT_IDS);
+
+	const attackerFleetCount: number = getArrayOfLiveUnits({ fleet: attackerFleet, unitFilter }).length;
+	const defenderFleetCount: number = getArrayOfLiveUnits({ fleet: defenderFleet, unitFilter }).length;
 
 	if (attackerFleetCount == 0 && defenderFleetCount == 0) return [0, 100, 0];
 	if (attackerFleetCount >= 1 && defenderFleetCount == 0) return [100, 0, 0];
@@ -269,7 +336,7 @@ const battleSimulation = ({ attacker, defender }: BattleSimulationProps): Battle
 
 	for (let i = 0; i < simulations; i++) {
 
-		const result = combat(attackerFleet, attacker.config.factionID, defenderFleet, defender.config.factionID);
+		const result = combat(attackerFleet, attacker.config.factionID, defenderFleet, defender.config.factionID, options.combatType);
 
 		resetCombat(attackerFleet);
 		resetCombat(defenderFleet);

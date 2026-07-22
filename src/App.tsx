@@ -4,19 +4,20 @@ import Results from './components/Results';
 import UnitRows from './components/UnitRows';
 import FleetCost from './components/FleetCost';
 import ControlRow from './components/ControlRow';
-import battleSimulation, { type BattleSimulationResults } from './utils/BattleSim';
+import battleSimulation, { type BattleSimulationResults, type CombatType } from './utils/BattleSim';
 import usePlayer, { type Player } from './utils/Player';
 
 function App() {
 
     const [results, setResults] = useState<BattleSimulationResults>([0, 100, 0]);
+    const [combatType, setCombatType] = useState<CombatType>('Space');
 
     const attacker: Player = usePlayer("arborec");
     const defender: Player = usePlayer("arborec");
 
     useEffect(() => {
-        setResults(battleSimulation({ attacker, defender }));
-    }, [attacker, defender]);
+        setResults(battleSimulation(attacker, defender, { combatType }));
+    }, [attacker, defender, combatType]);
 
     return (
         <div>
@@ -25,7 +26,7 @@ function App() {
                 <FactionDropdown attacker={attacker} defender={defender} />
                 <UnitRows attacker={attacker} defender={defender} />
                 <FleetCost attacker={attacker} defender={defender} />
-                <ControlRow attacker={attacker} defender={defender} />
+                <ControlRow attacker={attacker} defender={defender} combatType={combatType} setCombatType={setCombatType} />
                 <h2 className="results-heading">Results</h2>
                 <Results results={results} />
             </div>
