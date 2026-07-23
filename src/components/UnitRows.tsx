@@ -17,7 +17,7 @@ const UpgradeInput = ({ unitID, label, upgraded, toggleUpgrade, disabled }: Upgr
             title="upgrade"
             checked={upgraded}
             disabled={disabled}
-            onChange={e => {
+            onChange={() => {
                 toggleUpgrade(unitID)
             }}
         />

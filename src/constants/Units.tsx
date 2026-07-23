@@ -7,13 +7,13 @@ export type UnitID =
 export interface UnitDefinition {
 	unitID: UnitID;
 	name: string;
-	reinforcements?: number, // Default to 1 for flagships
+	reinforcements?: number,
 	cost: number[];
 	combatValue: number[];
-	diceCount?: number[]; // Default to 1
-	moveSpeed?: number[]; // Default to 0
-	capacity?: number[]; // Default to 0
-	sustainDamage?: boolean[]; // Default to false
+	diceCount?: number[];
+	moveSpeed?: number[];
+	capacity?: number[];
+	sustainDamage?: boolean[];
 	antiFighterBarrage?: { value: number; diceCount: number }[];
 	bombardment?: { value: number; diceCount: number }[];
 	spaceCannon?: { value: number; diceCount: number }[];
@@ -42,10 +42,10 @@ export interface UnitSummary {
 	reinforcements: number,
 	cost: number,
 	combatValue: number,
-	diceCount: number, // Default to 1
-	moveSpeed: number, // Default to 0
-	capacity: number, // Default to 0
-	sustainDamage: boolean, // Default to false
+	diceCount: number,
+	moveSpeed: number,
+	capacity: number,
+	sustainDamage: boolean,
 	antiFighterBarrage?: { value: number; diceCount: number },
 	bombardment?: { value: number; diceCount: number },
 	spaceCannon?: { value: number; diceCount: number },
@@ -99,7 +99,7 @@ const units: UnitDefinition[] = [
 			{ value: 6, diceCount: 3 },
 		],
 		specialText: [
-			null,
+			'',
 			'Direct Hit cards are no longer effective against this type of ship.'
 		],
 	},
@@ -117,7 +117,7 @@ const units: UnitDefinition[] = [
 			{ value: 5, diceCount: 1 },
 		],
 		specialText: [
-			null,
+			'',
 			"\"Direct Hit\" cards are no longer effective against this type of ship.",
 		],
 	},
@@ -150,17 +150,17 @@ const units: UnitDefinition[] = [
 		unitID: 'warsun',
 		name: 'War Sun',
 		reinforcements: 2,
-		cost: [null, 12],
-		combatValue: [null, 3],
-		diceCount: [null, 3],
-		moveSpeed: [null, 2],
-		capacity: [null, 6],
-		sustainDamage: [null, true],
+		cost: [0, 12],
+		combatValue: [0, 3],
+		diceCount: [0, 3],
+		moveSpeed: [0, 2],
+		capacity: [0, 6],
+		sustainDamage: [false, true],
 		bombardment: [
-			null,
+			{ value: 0, diceCount: 0 },
 			{ value: 3, diceCount: 3 },
 		],
-		bypassPlanetaryShield: [null, true],
+		bypassPlanetaryShield: [false, true],
 		specialText: [
 			"Can't build without research.",
 			"Other players' units in this system lose their Planetary Shield ability."
@@ -174,7 +174,7 @@ const units: UnitDefinition[] = [
 		cost: [0.5],
 		combatValue: [8, 7],
 		specialText: [
-			null,
+			'',
 			"After this unit is destroyed, roll 1 die. If the result is 6 or greater, place the unit on this card. At the start of your next turn, place each unit that is on this card on a planet you control in your home system."
 		],
 	},
@@ -200,34 +200,35 @@ const units: UnitDefinition[] = [
 		],
 		planetaryShield: [true],
 		specialText: [
-			null,
+			'',
 			"You may use this unit's SPACE CANNON against ships that are adjacent to this unit's system.",
 		],
 	},
 
 ];
 
-function updateUnit(unit: UnitDefinition, factionUnit: Partial<UnitDefinition>) {
-	return { ...DEFAULT_UNIT, ...unit, ...factionUnit };
-};
+const updateUnit = (unit: UnitDefinition, factionUnit: Partial<UnitDefinition>) =>
+	({ ...DEFAULT_UNIT, ...unit, ...factionUnit });
 
 const resolveUnitDefinition = (unitID: UnitID, factionID: FactionID): UnitDefinition => {
 
-	const baseUnit: UnitDefinition = units.find(u => u.unitID == unitID);
+	const baseUnit = units.find(u => u.unitID == unitID);
 
-	const factionUnit: Partial<UnitDefinition> =
+	if (!baseUnit) {
+		throw new Error(`Unknown unitID: ${unitID}`);
+	}
+
+	const factionUnit: Partial<UnitDefinition> | undefined =
 		factions
 			.find(f => f.factionID == factionID)
-			.factionUnits
-			.find(u => u.unitID == unitID);
+			?.factionUnits
+			?.find(u => u.unitID == unitID);
 
-	// Coalesce to faction unit, when available.
-	return (factionUnit ? updateUnit(baseUnit, factionUnit) : updateUnit(baseUnit, {}));
+	// Coalesce with faction unit, when available.
+	return factionUnit ? updateUnit(baseUnit, factionUnit) : updateUnit(baseUnit, {});
 };
 
-// A unit only has a real upgrade ("II") level if at least one of its stat arrays
-// has a second entry; units whose arrays are all length 1 have identical stats
-// regardless of the `upgraded` flag, so there's nothing to toggle.
+// Checks for unit upgrades. When no upgrade exists, "Upgrade" input is hidden.
 export const canUpgrade = (unitID: UnitID, factionID: FactionID): boolean => {
 
 	const unit = resolveUnitDefinition(unitID, factionID);
@@ -266,25 +267,19 @@ const getUnitStats = ({ unitID, factionID, upgraded }: getUnitStatsProps): UnitS
 		name: unit.name + (upgraded ? ' I' : ' II'),
 		upgraded,
 		reinforcements: unit.reinforcements ?? 1,
-		cost: unit.cost.at(index),
+		cost: unit.cost.at(index) ?? 0,
 		combatValue: unit.combatValue.at(index) ?? 0,
-		diceCount: unit.diceCount.at(index) ?? 1,
-		moveSpeed: unit.moveSpeed.at(index) ?? 0,
-		capacity: unit.capacity.at(index) ?? 0,
-		sustainDamage: unit.sustainDamage.at(index) ?? false,
-		antiFighterBarrage: unit.antiFighterBarrage.at(index) ?? null,
-		bombardment: unit.bombardment.at(index) ?? null,
-		spaceCannon: unit.spaceCannon.at(index) ?? null,
-		planetaryShield: unit.planetaryShield.at(index) ?? null,
-		bypassPlanetaryShield: unit.bypassPlanetaryShield.at(index) ?? null,
-		specialText: unit.specialText.at(index) ?? null,
+		diceCount: unit.diceCount?.at(index) ?? 1,
+		moveSpeed: unit.moveSpeed?.at(index) ?? 0,
+		capacity: unit.capacity?.at(index) ?? 0,
+		sustainDamage: unit.sustainDamage?.at(index) ?? false,
+		antiFighterBarrage: unit.antiFighterBarrage?.at(index) ?? undefined,
+		bombardment: unit.bombardment?.at(index) ?? undefined,
+		spaceCannon: unit.spaceCannon?.at(index) ?? undefined,
+		planetaryShield: unit.planetaryShield?.at(index) ?? undefined,
+		bypassPlanetaryShield: unit.bypassPlanetaryShield?.at(index) ?? undefined,
+		specialText: unit.specialText?.at(index) ?? undefined,
 	});
 }
-
-// NOTE: No need for a getFleetStats function; stats initialize/update when:
-//		users load the page (fleet is empty)
-//		users increase count from 0 to X (pull one)
-//		upgrade units (update existing, if more than 0)
-//		change factions (update faction units only; 1-2 units plus mech/flagship)
 
 export default getUnitStats;

@@ -64,7 +64,7 @@ const Info = () => {
                     />
                     <Section
                         title="Known issues with deployed features"
-                        items={['(None so far as I know.)']}
+                        items={['PDS alone vs regular units always loses.']}
                     />
                     <Section
                         title="Need to Implement"

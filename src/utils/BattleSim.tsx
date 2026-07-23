@@ -19,8 +19,8 @@ export type BattleSimulationOptions = {
 export type BattleSimulationResults = [number, number, number];
 
 // Lists of units that partake in regular combat in ground vs space. PDS not included as that is pre-combat.
-const SPACE_UNIT_IDS: UnitID[] = ['carrier', 'cruiser', 'destroyer', 'dreadnought', 'fighter', 'flagship', 'warsun'];
-const GROUND_UNIT_IDS: UnitID[] = ['infantry', 'mech'];
+export const SPACE_UNIT_IDS: UnitID[] = ['carrier', 'cruiser', 'destroyer', 'dreadnought', 'fighter', 'flagship', 'warsun'];
+export const GROUND_UNIT_IDS: UnitID[] = ['infantry', 'mech'];
 
 const calculatePercentages = (
 	tallies: BattleSimulationResults,
@@ -145,8 +145,7 @@ const antiFighterBarrage = (barragingFleet: Record<UnitID, SimUnitState>, barrag
 	const hits: number = typedEntries(barragingFleet)
 		.filter(([_, { count, stats }]) => count > 0 && stats.antiFighterBarrage)
 		.map(([_, { count, stats }]) => {
-			// This is flagging on lint, but no undefined values will make it through the previous filter.
-			const { value, diceCount } = stats.antiFighterBarrage;
+			const { value, diceCount } = stats.antiFighterBarrage ?? { value: 0, diceCount: 0 }
 			return rollSingleUnitAttack(count, value, diceCount, 0);
 		})
 		.reduce((a, b) => a + b, 0);
@@ -164,9 +163,8 @@ const spaceCannon = (activeFleet: Record<UnitID, SimUnitState>, targetedFleet: R
 	let hits: number = typedEntries(activeFleet)
 		.filter(([_, unit]) => unit.count > 0 && unit.stats.spaceCannon)
 		.map(([_, { count, stats }]) => {
-			// This is flagging on lint, but no undefined values will make it through the previous filter.
-			const { value, diceCount } = stats.spaceCannon;
-			return rollSingleUnitAttack(count, value, diceCount, 0); // Todo: I believe no faction gets +/- 1 on AFB because it's an ability not an attack, but should confirm.
+			const { value, diceCount } = stats.spaceCannon ?? { value: 0, diceCount: 0 };
+			return rollSingleUnitAttack(count, value, diceCount, 0);
 		})
 		.reduce((a, b) => a + b, 0);
 
@@ -189,7 +187,7 @@ const bombardment = (attackerFleet: Record<UnitID, SimUnitState>, defenderFleet:
 	let hits: number = typedEntries(attackerFleet)
 		.filter(([_, unit]) => unit.count - unit.destroyed > 0 && unit.stats.bombardment)
 		.map(([_, { count, destroyed, stats }]) => {
-			const { value, diceCount } = stats.bombardment;
+			const { value, diceCount } = stats.bombardment ?? { value: 0, diceCount: 0 };
 			return rollSingleUnitAttack(count - destroyed, value, diceCount, 0);
 		})
 		.reduce((a, b) => a + b, 0);
@@ -204,8 +202,8 @@ export const getEnemyShipCount = (fleet: Record<UnitID, SimUnitState>): number =
 		.map(([unitID, unit]) => (['fighter', 'infantry', 'pds'].includes(unitID) ? 0 : unit.count - unit.destroyed))
 		.reduce((a, b) => a + b);
 
-// Regular combat rounds shared by both space and ground combat, restricted to whichever unit
-// types are eligible to fight (SPACE_UNIT_IDS or GROUND_UNIT_IDS).
+// Regular combat rounds shared by both space and ground combat, restricted to
+// whichever unit types are eligible to fight (SPACE_UNIT_IDS | GROUND_UNIT_IDS).
 const runCombatRounds = (
 	attackerFleet: Record<UnitID, SimUnitState>,
 	attackerFactionID: FactionID,
