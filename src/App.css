@@ -72,6 +72,24 @@
         height: 75%;
         padding: 10px;
         border-radius: 8px;
+        appearance: none;
+        -webkit-appearance: none;
+        background: #e3e8ef;
+        color: #1b1f27;
+        border-style: solid;
+        border-width: 2px;
+        border-color: #f7f9fb #7c8896 #7c8896 #f7f9fb;
+        cursor: pointer;
+    }
+
+    .column button:active {
+        border-color: #7c8896 #f7f9fb #f7f9fb #7c8896;
+        transform: translate(1px, 1px);
+    }
+
+    .column button:focus-visible {
+        outline: 2px solid #5b8def;
+        outline-offset: 1px;
     }
 
 .faction-row .column.left {

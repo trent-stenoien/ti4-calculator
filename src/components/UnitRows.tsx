@@ -37,6 +37,7 @@ const CountInput = ({ unitID, label, count, setUnitCount, disabled }: CountInput
         type="number"
         value={count}
         disabled={disabled}
+        onFocus={e => e.target.select()}
         onChange={e => {
             e.preventDefault();
             setUnitCount(unitID, Number(e.target.value))
